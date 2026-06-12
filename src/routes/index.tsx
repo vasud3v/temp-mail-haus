@@ -1,29 +1,44 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Toaster } from "@/components/ui/sonner";
+import { Header } from "@/components/tempmail/Header";
+import { Hero } from "@/components/tempmail/Hero";
+import { InboxSection } from "@/components/tempmail/InboxSection";
+import { FeaturesGrid } from "@/components/tempmail/FeaturesGrid";
+import { StatsCards } from "@/components/tempmail/StatsCards";
+import { Footer } from "@/components/tempmail/Footer";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Your App" },
-      { name: "description", content: "Replace this with a one-sentence description of your app." },
-      { property: "og:title", content: "Your App" },
-      { property: "og:description", content: "Replace this with a one-sentence description of your app." },
+      { title: "Tempbox — Temporary Email That Just Works" },
+      {
+        name: "description",
+        content:
+          "Free disposable email inbox. No signup. Instant addresses, auto-delete in 24h, total privacy.",
+      },
+      { property: "og:title", content: "Tempbox — Temporary Email That Just Works" },
+      {
+        property: "og:description",
+        content:
+          "Free disposable email inbox. No signup. Instant addresses, auto-delete in 24h, total privacy.",
+      },
     ],
   }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-paper text-ink">
+      <Header />
+      <main>
+        <Hero />
+        <InboxSection />
+        <FeaturesGrid />
+        <StatsCards />
+      </main>
+      <Footer />
+      <Toaster />
     </div>
   );
 }
