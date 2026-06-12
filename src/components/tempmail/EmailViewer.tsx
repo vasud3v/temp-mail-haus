@@ -1,10 +1,60 @@
-import { Reply, Trash2, Archive } from "lucide-react";
+import { Reply, Trash2, Archive, Printer, Download, Paperclip } from "lucide-react";
+import { toast } from "sonner";
 import { type MockEmail, AVATAR_BG, relativeTime } from "./mock";
+import { useTempMail } from "./TempMailContext";
 
 type Props = { email: MockEmail | null };
 
 export function EmailViewer({ email }: Props) {
+  const { deleteEmail, email: address } = useTempMail();
   if (!email) return <EmptyState />;
+
+  const exportEml = () => {
+    const eml = [
+      `From: ${email.sender} <${email.senderEmail}>`,
+      `To: ${address}`,
+      `Subject: ${email.subject}`,
+      `Date: ${email.receivedAt.toUTCString()}`,
+      `Content-Type: text/plain; charset=utf-8`,
+      ``,
+      email.body,
+    ].join("\r\n");
+    const blob = new Blob([eml], { type: "message/rfc822" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${email.subject.replace(/[^a-z0-9-_]+/gi, "_").slice(0, 40)}.eml`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Message downloaded");
+  };
+
+  const print = () => {
+    const w = window.open("", "_blank", "width=720,height=900");
+    if (!w) return;
+    w.document.write(`<html><head><title>${email.subject}</title>
+      <style>body{font-family:Inter,system-ui,sans-serif;padding:32px;color:#111}
+      h1{font-size:22px;margin:0 0 8px}.meta{color:#666;font-size:12px;margin-bottom:16px}
+      pre{white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.6}</style></head><body>
+      <h1>${email.subject}</h1>
+      <div class="meta">From <b>${email.sender}</b> &lt;${email.senderEmail}&gt; · ${email.receivedAt.toLocaleString()}</div>
+      <pre>${email.body.replace(/</g, "&lt;")}</pre>
+      </body></html>`);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 300);
+  };
+
+  const downloadAttachment = (name: string, mime: string) => {
+    const blob = new Blob([`[mock attachment: ${name}]`], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast(`Downloaded ${name}`);
+  };
 
   return (
     <div className="brutal-border brutal-shadow flex h-full flex-col rounded-3xl bg-card">
@@ -21,10 +71,12 @@ export function EmailViewer({ email }: Props) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <IconButton label="Reply"><Reply className="h-4 w-4" strokeWidth={2.75} /></IconButton>
+          <IconButton label="Print" onClick={print}><Printer className="h-4 w-4" strokeWidth={2.75} /></IconButton>
+          <IconButton label="Download .eml" onClick={exportEml}><Download className="h-4 w-4" strokeWidth={2.75} /></IconButton>
           <IconButton label="Archive"><Archive className="h-4 w-4" strokeWidth={2.75} /></IconButton>
-          <IconButton label="Delete"><Trash2 className="h-4 w-4" strokeWidth={2.75} /></IconButton>
+          <IconButton label="Delete" onClick={() => deleteEmail(email.id)}><Trash2 className="h-4 w-4" strokeWidth={2.75} /></IconButton>
         </div>
       </div>
 
@@ -33,15 +85,43 @@ export function EmailViewer({ email }: Props) {
         <pre className="mt-4 whitespace-pre-wrap font-sans text-sm leading-relaxed text-ink">
           {email.body}
         </pre>
+
+        {email.attachments && email.attachments.length > 0 && (
+          <div className="mt-6">
+            <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <Paperclip className="h-3.5 w-3.5" strokeWidth={2.75} />
+              {email.attachments.length} attachment{email.attachments.length > 1 ? "s" : ""}
+            </p>
+            <ul className="flex flex-wrap gap-2">
+              {email.attachments.map((a) => (
+                <li key={a.name}>
+                  <button
+                    onClick={() => downloadAttachment(a.name, a.mime)}
+                    className="brutal-border brutal-press inline-flex items-center gap-2 rounded-xl bg-paper px-3 py-2 text-xs font-bold text-ink"
+                  >
+                    <Paperclip className="h-3.5 w-3.5" strokeWidth={2.75} />
+                    <span className="max-w-[160px] truncate">{a.name}</span>
+                    <span className="text-muted-foreground">· {a.size}</span>
+                    <Download className="h-3.5 w-3.5" strokeWidth={2.75} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function IconButton({ children, label }: { children: React.ReactNode; label: string }) {
+function IconButton({
+  children, label, onClick,
+}: { children: React.ReactNode; label: string; onClick?: () => void }) {
   return (
     <button
       aria-label={label}
+      title={label}
+      onClick={onClick}
       className="brutal-border brutal-press inline-flex h-9 w-9 items-center justify-center rounded-xl bg-paper text-ink"
     >
       {children}

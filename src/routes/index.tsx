@@ -6,6 +6,7 @@ import { InboxSection } from "@/components/tempmail/InboxSection";
 import { FeaturesGrid } from "@/components/tempmail/FeaturesGrid";
 import { StatsCards } from "@/components/tempmail/StatsCards";
 import { Footer } from "@/components/tempmail/Footer";
+import { TempMailProvider } from "@/components/tempmail/TempMailContext";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -29,16 +30,18 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <div className="min-h-screen bg-paper text-ink">
-      <Header />
-      <main>
-        <Hero />
-        <InboxSection />
-        <FeaturesGrid />
-        <StatsCards />
-      </main>
-      <Footer />
-      <Toaster />
-    </div>
+    <TempMailProvider>
+      <div className="min-h-screen bg-paper text-ink transition-colors">
+        <Header />
+        <main>
+          <Hero />
+          <InboxSection />
+          <FeaturesGrid />
+          <StatsCards />
+        </main>
+        <Footer />
+        <Toaster />
+      </div>
+    </TempMailProvider>
   );
 }
