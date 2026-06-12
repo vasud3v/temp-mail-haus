@@ -1,6 +1,8 @@
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { type MockEmail, AVATAR_BG, relativeTime } from "./mock";
+import { useTempMail } from "./TempMailContext";
+import { t } from "@/lib/i18n";
 
 type Props = {
   emails: MockEmail[];
@@ -10,6 +12,7 @@ type Props = {
 };
 
 export function InboxList({ emails, selectedId, onSelect, loading }: Props) {
+  const { searchRef, locale } = useTempMail();
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -27,17 +30,18 @@ export function InboxList({ emails, selectedId, onSelect, loading }: Props) {
     <div className="brutal-border brutal-shadow rounded-3xl bg-card">
       <div className="border-b-[3px] border-ink p-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-black tracking-tight text-ink">Inbox</h3>
+          <h3 className="text-lg font-black tracking-tight text-ink">{t(locale, "inbox.title")}</h3>
           <span className="brutal-border rounded-full bg-brand-yellow px-2.5 py-0.5 text-xs font-bold text-ink">
-            {emails.filter((e) => e.unread).length} new
+            {emails.filter((e) => e.unread).length} {t(locale, "inbox.new")}
           </span>
         </div>
         <div className="relative mt-3">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2.5} />
           <input
+            ref={searchRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search inbox…"
+            placeholder={t(locale, "inbox.search")}
             className="brutal-border w-full rounded-2xl bg-paper py-2.5 pl-9 pr-3 text-sm font-medium text-ink placeholder:text-muted-foreground focus:outline-none focus:ring-0"
           />
         </div>

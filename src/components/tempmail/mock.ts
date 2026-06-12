@@ -1,3 +1,9 @@
+export type Attachment = {
+  name: string;
+  size: string;
+  mime: string;
+};
+
 export type MockEmail = {
   id: string;
   sender: string;
@@ -8,6 +14,8 @@ export type MockEmail = {
   body: string;
   receivedAt: Date;
   unread: boolean;
+  spam?: boolean;
+  attachments?: Attachment[];
 };
 
 export const DOMAINS = [
@@ -43,6 +51,10 @@ export const MOCK_EMAILS: MockEmail[] = [
     body: "This week in Figma:\n\n• 12 new community templates\n• 4 plugins worth trying\n• Tips for chunky soft-brutalist UI\n\nOpen Figma to dive in.",
     receivedAt: minutes(18),
     unread: true,
+    attachments: [
+      { name: "weekly-digest.pdf", size: "412 KB", mime: "application/pdf" },
+      { name: "cover.png", size: "88 KB", mime: "image/png" },
+    ],
   },
   {
     id: "3",
@@ -54,6 +66,7 @@ export const MOCK_EMAILS: MockEmail[] = [
     body: "Acme Coffee\nOrder #A1029\n\n1x Flat White — $4.20\n\nPaid with •••• 4242\nThanks for stopping by!",
     receivedAt: minutes(47),
     unread: false,
+    attachments: [{ name: "receipt-A1029.pdf", size: "36 KB", mime: "application/pdf" }],
   },
   {
     id: "4",
@@ -90,14 +103,15 @@ export const MOCK_EMAILS: MockEmail[] = [
   },
   {
     id: "7",
-    sender: "Spotify",
-    senderEmail: "no-reply@spotify.com",
-    avatarColor: "green",
-    subject: "Your Daylist: focused & a little feral",
-    preview: "A new playlist for your afternoon, refreshed just for you.",
-    body: "Your Daylist refreshed at 14:00.\n\nMood: focused & a little feral\n28 tracks · 1h 42m\n\nOpen Spotify to play.",
+    sender: "Crypto Riches",
+    senderEmail: "winner@totally-legit.biz",
+    avatarColor: "pink",
+    subject: "🎉 You won $10,000,000 — claim now!!!",
+    preview: "Dear friend, you have been selected as the lucky winner of our…",
+    body: "Dear friend,\n\nYOU have been selected! Click the link to claim ten million dollars TODAY. Send your bank details and a small processing fee.\n\nDo not delay!",
     receivedAt: minutes(540),
-    unread: false,
+    unread: true,
+    spam: true,
   },
   {
     id: "8",
@@ -125,6 +139,35 @@ export function randomLocalPart(): string {
   const n = nouns[Math.floor(Math.random() * nouns.length)];
   const num = Math.floor(Math.random() * 9000 + 1000);
   return `${a}.${n}${num}`;
+}
+
+const SENDERS: Array<Pick<MockEmail, "sender" | "senderEmail" | "avatarColor">> = [
+  { sender: "Slack", senderEmail: "notify@slack.com", avatarColor: "pink" },
+  { sender: "Dropbox", senderEmail: "no-reply@dropbox.com", avatarColor: "blue" },
+  { sender: "Apple", senderEmail: "appleid@id.apple.com", avatarColor: "green" },
+  { sender: "Twitch", senderEmail: "no-reply@twitch.tv", avatarColor: "pink" },
+  { sender: "Discord", senderEmail: "noreply@discord.com", avatarColor: "blue" },
+];
+const SUBJECTS = [
+  "Your one-time code: 482910",
+  "New device signed in",
+  "Welcome aboard 👋",
+  "Confirm your email to continue",
+  "Action required: verify your account",
+];
+
+export function makeRandomEmail(): MockEmail {
+  const s = SENDERS[Math.floor(Math.random() * SENDERS.length)];
+  const subject = SUBJECTS[Math.floor(Math.random() * SUBJECTS.length)];
+  return {
+    id: crypto.randomUUID(),
+    ...s,
+    subject,
+    preview: subject,
+    body: `${subject}\n\nThis is an automated message delivered to your temporary inbox.`,
+    receivedAt: new Date(),
+    unread: true,
+  };
 }
 
 export function relativeTime(date: Date): string {
