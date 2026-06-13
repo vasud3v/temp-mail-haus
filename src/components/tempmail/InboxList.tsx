@@ -1,8 +1,7 @@
-import { Search } from "lucide-react";
+import { Search, Star } from "lucide-react";
 import { useMemo, useState } from "react";
-import { type MockEmail, AVATAR_BG, relativeTime } from "./mock";
+import { type MockEmail, relativeTime, senderInitials } from "./mock";
 import { useTempMail } from "./TempMailContext";
-import { t } from "@/lib/i18n";
 
 type Props = {
   emails: MockEmail[];
@@ -12,7 +11,7 @@ type Props = {
 };
 
 export function InboxList({ emails, selectedId, onSelect, loading }: Props) {
-  const { searchRef, locale } = useTempMail();
+  const { searchRef, toggleStar } = useTempMail();
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -27,33 +26,27 @@ export function InboxList({ emails, selectedId, onSelect, loading }: Props) {
   }, [emails, query]);
 
   return (
-    <div className="brutal-border brutal-shadow rounded-3xl bg-card">
-      <div className="border-b-[3px] border-ink p-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-black tracking-tight text-ink">{t(locale, "inbox.title")}</h3>
-          <span className="brutal-border rounded-full bg-brand-yellow px-2.5 py-0.5 text-xs font-bold text-ink">
-            {emails.filter((e) => e.unread).length} {t(locale, "inbox.new")}
-          </span>
-        </div>
-        <div className="relative mt-3">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2.5} />
+    <div className="surface flex h-full flex-col">
+      <div className="border-b border-line p-3">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             ref={searchRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t(locale, "inbox.search")}
-            className="brutal-border w-full rounded-2xl bg-paper py-2.5 pl-9 pr-3 text-sm font-medium text-ink placeholder:text-muted-foreground focus:outline-none focus:ring-0"
+            placeholder="Search messages…"
+            className="w-full rounded-md border border-line bg-paper py-2 pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-passion focus:outline-none"
           />
         </div>
       </div>
 
-      <ul className="max-h-[560px] divide-y-[3px] divide-ink overflow-y-auto">
+      <ul className="max-h-[560px] flex-1 divide-y divide-line overflow-y-auto">
         {loading
           ? Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
           : filtered.length === 0
             ? (
-              <li className="p-8 text-center text-sm font-medium text-muted-foreground">
-                No messages match "{query}".
+              <li className="grid place-items-center px-6 py-16 text-center text-sm text-muted-foreground">
+                {query ? `No messages match "${query}"` : "Your inbox is empty"}
               </li>
             )
             : filtered.map((email) => {
@@ -62,30 +55,36 @@ export function InboxList({ emails, selectedId, onSelect, loading }: Props) {
                   <li key={email.id}>
                     <button
                       onClick={() => onSelect(email.id)}
-                      className={`flex w-full items-start gap-3 p-4 text-left transition-colors ${
-                        active ? "bg-brand-yellow/40" : "hover:bg-paper"
+                      className={`group relative flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors ${
+                        active ? "bg-mist/60" : "hover:bg-muted/60"
                       }`}
                     >
-                      <span
-                        className={`brutal-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black text-ink ${AVATAR_BG[email.avatarColor]}`}
-                      >
-                        {email.sender.charAt(0)}
+                      {active && <span className="absolute inset-y-2 left-0 w-0.5 rounded-r bg-passion" />}
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-mist font-serif text-sm text-ship">
+                        {senderInitials(email.sender)}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="truncate text-sm font-bold text-ink">{email.sender}</p>
-                          <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
-                            {relativeTime(email.receivedAt)}
-                          </span>
+                          <p className={`truncate text-sm ${email.unread ? "font-semibold text-foreground" : "font-medium text-foreground/80"}`}>
+                            {email.sender}
+                          </p>
+                          <div className="flex shrink-0 items-center gap-1.5">
+                            <span className="text-[11px] text-muted-foreground">{relativeTime(email.receivedAt)}</span>
+                            {email.unread && <span className="h-1.5 w-1.5 rounded-full bg-passion" aria-label="unread" />}
+                          </div>
                         </div>
-                        <p className={`truncate text-sm ${email.unread ? "font-bold text-ink" : "text-muted-foreground"}`}>
+                        <p className={`truncate text-[13px] ${email.unread ? "text-foreground" : "text-muted-foreground"}`}>
                           {email.subject}
                         </p>
-                        <p className="mt-0.5 truncate text-xs text-muted-foreground">{email.preview}</p>
+                        <p className="mt-0.5 truncate text-[12px] text-muted-foreground">{email.preview}</p>
                       </div>
-                      {email.unread && (
-                        <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full border-2 border-ink bg-brand-pink" aria-label="unread" />
-                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleStar(email.id); }}
+                        aria-label={email.starred ? "Unstar" : "Star"}
+                        className={`shrink-0 rounded p-1 ${email.starred ? "text-rose" : "text-muted-foreground/60 opacity-0 group-hover:opacity-100"}`}
+                      >
+                        <Star className="h-3.5 w-3.5" fill={email.starred ? "currentColor" : "none"} />
+                      </button>
                     </button>
                   </li>
                 );
@@ -98,7 +97,7 @@ export function InboxList({ emails, selectedId, onSelect, loading }: Props) {
 function SkeletonRow() {
   return (
     <li className="flex items-start gap-3 p-4">
-      <span className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-muted" />
+      <span className="h-9 w-9 shrink-0 animate-pulse rounded-md bg-muted" />
       <div className="flex-1 space-y-2">
         <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
         <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />

@@ -3,7 +3,16 @@ import { toast } from "sonner";
 import { DOMAINS, MOCK_EMAILS, makeRandomEmail, randomLocalPart, type MockEmail } from "./mock";
 
 type Theme = "light" | "dark";
-export type Locale = "en" | "es" | "fr" | "de";
+
+export type SavedAddress = {
+  id: string;
+  localPart: string;
+  domain: string;
+  createdAt: number;
+  expiresAt: number;
+};
+
+type Filter = "all" | "unread" | "starred";
 
 type Ctx = {
   // address
@@ -13,27 +22,32 @@ type Ctx = {
   setDomain: (d: string) => void;
   regenerate: () => void;
   copyEmail: () => Promise<void>;
-  createdAt: number; // ms epoch when address was made
+  createdAt: number;
+  expiresAt: number;
+  extendSession: () => void;
+  // history
+  history: SavedAddress[];
+  switchTo: (id: string) => void;
+  removeFromHistory: (id: string) => void;
   // emails
   emails: MockEmail[];
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
   deleteEmail: (id: string) => void;
   markRead: (id: string) => void;
+  toggleStar: (id: string) => void;
+  refreshNow: () => void;
+  // filter / search
+  filter: Filter;
+  setFilter: (f: Filter) => void;
   // toggles
   theme: Theme;
   toggleTheme: () => void;
-  sound: boolean;
-  toggleSound: () => void;
   autoRefresh: boolean;
   toggleAutoRefresh: () => void;
-  spamFilter: boolean;
-  toggleSpamFilter: () => void;
-  locale: Locale;
-  setLocale: (l: Locale) => void;
   // loading
   loading: boolean;
-  // search
+  // search input ref (for shortcut focus)
   searchRef: React.RefObject<HTMLInputElement | null>;
 };
 
@@ -45,135 +59,158 @@ export function useTempMail() {
   return c;
 }
 
-function playBeep() {
-  try {
-    const AC = (window.AudioContext || (window as any).webkitAudioContext);
-    if (!AC) return;
-    const ctx = new AC();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = "sine";
-    o.frequency.value = 880;
-    g.gain.value = 0.07;
-    o.connect(g);
-    g.connect(ctx.destination);
-    o.start();
-    o.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.18);
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.22);
-    o.stop(ctx.currentTime + 0.23);
-    setTimeout(() => ctx.close(), 400);
-  } catch {}
-}
+const TTL = 24 * 60 * 60 * 1000;
 
 export function TempMailProvider({ children }: { children: ReactNode }) {
   const [localPart, setLocalPart] = useState("loading");
   const [domain, setDomain] = useState(DOMAINS[0]);
   const [createdAt, setCreatedAt] = useState(() => Date.now());
+  const [expiresAt, setExpiresAt] = useState(() => Date.now() + TTL);
+  const [history, setHistory] = useState<SavedAddress[]>([]);
   const [emails, setEmails] = useState<MockEmail[]>(MOCK_EMAILS);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>("light");
-  const [sound, setSound] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [spamFilter, setSpamFilter] = useState(true);
-  const [locale, setLocale] = useState<Locale>("en");
+  const [filter, setFilter] = useState<Filter>("all");
   const searchRef = useRef<HTMLInputElement | null>(null);
 
-  // initial address + load
+  // initial address
   useEffect(() => {
-    setLocalPart(randomLocalPart());
+    const lp = randomLocalPart();
+    setLocalPart(lp);
     const t = setTimeout(() => {
       setLoading(false);
       setSelectedId(MOCK_EMAILS[0].id);
-    }, 500);
+    }, 450);
     return () => clearTimeout(t);
   }, []);
 
-  // theme apply
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
-  }, [theme]);
-
-  // restore prefs
+  // restore prefs + history
   useEffect(() => {
     try {
-      const s = localStorage.getItem("tempbox:prefs");
+      const s = localStorage.getItem("tempbox:v2");
       if (s) {
         const p = JSON.parse(s);
         if (p.theme) setTheme(p.theme);
-        if (typeof p.sound === "boolean") setSound(p.sound);
         if (typeof p.autoRefresh === "boolean") setAutoRefresh(p.autoRefresh);
-        if (typeof p.spamFilter === "boolean") setSpamFilter(p.spamFilter);
-        if (p.locale) setLocale(p.locale);
+        if (Array.isArray(p.history)) setHistory(p.history);
       }
     } catch {}
   }, []);
   useEffect(() => {
     try {
-      localStorage.setItem(
-        "tempbox:prefs",
-        JSON.stringify({ theme, sound, autoRefresh, spamFilter, locale }),
-      );
+      localStorage.setItem("tempbox:v2", JSON.stringify({ theme, autoRefresh, history }));
     } catch {}
-  }, [theme, sound, autoRefresh, spamFilter, locale]);
+  }, [theme, autoRefresh, history]);
 
-  // auto-refresh: every 25s maybe add a new email
+  // theme apply
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", theme === "dark");
+  }, [theme]);
+
+  // record current address in history
+  useEffect(() => {
+    if (localPart === "loading") return;
+    setHistory((prev) => {
+      const exists = prev.find((h) => h.localPart === localPart && h.domain === domain);
+      if (exists) return prev;
+      const entry: SavedAddress = {
+        id: `${localPart}@${domain}`,
+        localPart, domain, createdAt, expiresAt,
+      };
+      return [entry, ...prev].slice(0, 8);
+    });
+  }, [localPart, domain, createdAt, expiresAt]);
+
+  // auto-refresh
   useEffect(() => {
     if (!autoRefresh) return;
     const id = setInterval(() => {
       const next = makeRandomEmail();
       setEmails((prev) => [next, ...prev]);
-      if (sound) playBeep();
-      toast(`New message from ${next.sender}`, { description: next.subject });
-    }, 25_000);
+      toast(`New message · ${next.sender}`, { description: next.subject });
+    }, 30_000);
     return () => clearInterval(id);
-  }, [autoRefresh, sound]);
+  }, [autoRefresh]);
 
   const email = `${localPart}@${domain}`;
 
   const regenerate = useCallback(() => {
-    setLocalPart(randomLocalPart());
-    setCreatedAt(Date.now());
+    const lp = randomLocalPart();
+    setLocalPart(lp);
+    const t0 = Date.now();
+    setCreatedAt(t0);
+    setExpiresAt(t0 + TTL);
     setEmails(MOCK_EMAILS);
     setSelectedId(MOCK_EMAILS[0].id);
-    toast("Fresh address generated", { description: "Your old one was instantly forgotten." });
+    toast("New address generated");
   }, []);
 
   const copyEmail = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(`${localPart}@${domain}`);
-      toast.success("Copied to clipboard", { description: `${localPart}@${domain}` });
+      toast.success("Copied", { description: `${localPart}@${domain}` });
     } catch {
       toast.error("Could not copy");
     }
   }, [localPart, domain]);
 
+  const extendSession = useCallback(() => {
+    setExpiresAt((e) => e + TTL);
+    toast.success("Session extended by 24 hours");
+  }, []);
+
+  const switchTo = useCallback((id: string) => {
+    setHistory((prev) => {
+      const h = prev.find((x) => x.id === id);
+      if (!h) return prev;
+      setLocalPart(h.localPart);
+      setDomain(h.domain);
+      setCreatedAt(h.createdAt);
+      setExpiresAt(h.expiresAt);
+      setEmails(MOCK_EMAILS);
+      setSelectedId(MOCK_EMAILS[0].id);
+      return prev;
+    });
+  }, []);
+
+  const removeFromHistory = useCallback((id: string) => {
+    setHistory((prev) => prev.filter((h) => h.id !== id));
+  }, []);
+
   const deleteEmail = useCallback((id: string) => {
     setEmails((prev) => prev.filter((e) => e.id !== id));
     setSelectedId((sel) => (sel === id ? null : sel));
-    toast("Message deleted");
   }, []);
 
   const markRead = useCallback((id: string) => {
     setEmails((prev) => prev.map((e) => (e.id === id ? { ...e, unread: false } : e)));
   }, []);
 
-  const value: Ctx = useMemo(
-    () => ({
-      localPart, domain, email, setDomain, regenerate, copyEmail, createdAt,
-      emails, selectedId, setSelectedId, deleteEmail, markRead,
-      theme, toggleTheme: () => setTheme((t) => (t === "light" ? "dark" : "light")),
-      sound, toggleSound: () => setSound((s) => !s),
-      autoRefresh, toggleAutoRefresh: () => setAutoRefresh((v) => !v),
-      spamFilter, toggleSpamFilter: () => setSpamFilter((v) => !v),
-      locale, setLocale,
-      loading, searchRef,
-    }),
-    [localPart, domain, email, regenerate, copyEmail, createdAt, emails, selectedId,
-     deleteEmail, markRead, theme, sound, autoRefresh, spamFilter, locale, loading],
-  );
+  const toggleStar = useCallback((id: string) => {
+    setEmails((prev) => prev.map((e) => (e.id === id ? { ...e, starred: !e.starred } : e)));
+  }, []);
+
+  const refreshNow = useCallback(() => {
+    const next = makeRandomEmail();
+    setEmails((prev) => [next, ...prev]);
+    toast(`New message · ${next.sender}`, { description: next.subject });
+  }, []);
+
+  const value: Ctx = useMemo(() => ({
+    localPart, domain, email, setDomain, regenerate, copyEmail, createdAt, expiresAt, extendSession,
+    history, switchTo, removeFromHistory,
+    emails, selectedId, setSelectedId, deleteEmail, markRead, toggleStar, refreshNow,
+    filter, setFilter,
+    theme, toggleTheme: () => setTheme((t) => (t === "light" ? "dark" : "light")),
+    autoRefresh, toggleAutoRefresh: () => setAutoRefresh((v) => !v),
+    loading, searchRef,
+  }), [localPart, domain, email, regenerate, copyEmail, createdAt, expiresAt, extendSession,
+       history, switchTo, removeFromHistory,
+       emails, selectedId, deleteEmail, markRead, toggleStar, refreshNow,
+       filter, theme, autoRefresh, loading]);
 
   return <TempMailCtx.Provider value={value}>{children}</TempMailCtx.Provider>;
 }

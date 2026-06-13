@@ -1,72 +1,75 @@
-import { useMemo, useState } from "react";
-import { Search, ShieldOff, ShieldCheck, RefreshCw } from "lucide-react";
+import { useMemo } from "react";
+import { RefreshCw, Inbox, Star, Mail } from "lucide-react";
 import { InboxList } from "./InboxList";
 import { EmailViewer } from "./EmailViewer";
 import { useTempMail } from "./TempMailContext";
-import { t } from "@/lib/i18n";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
-import { ShortcutsModal } from "./ShortcutsModal";
-import { QrModal } from "./QrModal";
 
 export function InboxSection() {
   const {
-    emails, selectedId, setSelectedId, loading, locale,
-    spamFilter, toggleSpamFilter, autoRefresh, toggleAutoRefresh,
-    email, markRead,
+    emails, selectedId, setSelectedId, loading,
+    autoRefresh, toggleAutoRefresh, refreshNow,
+    filter, setFilter, markRead,
   } = useTempMail();
-  const [help, setHelp] = useState(false);
-  const [qr, setQr] = useState(false);
 
-  useKeyboardShortcuts(() => setHelp((v) => !v), () => setQr(true));
+  useKeyboardShortcuts();
 
-  const visible = useMemo(
-    () => (spamFilter ? emails.filter((e) => !e.spam) : emails),
-    [emails, spamFilter],
-  );
+  const visible = useMemo(() => {
+    const noSpam = emails.filter((e) => !e.spam);
+    if (filter === "unread") return noSpam.filter((e) => e.unread);
+    if (filter === "starred") return noSpam.filter((e) => e.starred);
+    return noSpam;
+  }, [emails, filter]);
+
+  const counts = useMemo(() => {
+    const noSpam = emails.filter((e) => !e.spam);
+    return {
+      all: noSpam.length,
+      unread: noSpam.filter((e) => e.unread).length,
+      starred: noSpam.filter((e) => e.starred).length,
+    };
+  }, [emails]);
 
   const selected = visible.find((e) => e.id === selectedId) ?? null;
-  if (selected && selected.unread) {
-    setTimeout(() => markRead(selected.id), 0);
-  }
+  if (selected && selected.unread) setTimeout(() => markRead(selected.id), 0);
 
   return (
-    <section id="inbox" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
-        <div className="max-w-2xl">
-          <span className="brutal-border inline-block rounded-full bg-brand-blue px-3 py-1 text-xs font-bold uppercase tracking-wider text-ink brutal-shadow-sm">
-            Live preview
-          </span>
-          <h2 className="mt-4 text-4xl font-black tracking-tight text-ink sm:text-5xl">
-            {t(locale, "inbox.heading")}
+    <section id="inbox" className="mx-auto max-w-6xl px-5 pb-24 pt-10 sm:px-8">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">02 / Inbox</p>
+          <h2 className="mt-2 font-serif text-3xl tracking-tight text-foreground sm:text-4xl">
+            Your messages
           </h2>
-          <p className="mt-3 text-base text-muted-foreground">{t(locale, "inbox.sub")}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Toggle
-            label={spamFilter ? "Spam: filtered" : "Spam: visible"}
-            active={spamFilter}
-            onClick={toggleSpamFilter}
-            icon={spamFilter ? <ShieldCheck className="h-4 w-4" strokeWidth={2.75} /> : <ShieldOff className="h-4 w-4" strokeWidth={2.75} />}
-          />
-          <Toggle
-            label={autoRefresh ? "Auto-refresh: on" : "Auto-refresh: off"}
-            active={autoRefresh}
-            onClick={toggleAutoRefresh}
-            icon={<RefreshCw className={`h-4 w-4 ${autoRefresh ? "animate-[spin_4s_linear_infinite]" : ""}`} strokeWidth={2.75} />}
-          />
+          <div className="inline-flex rounded-md border border-line bg-card p-0.5">
+            <FilterTab active={filter === "all"}     onClick={() => setFilter("all")}     icon={<Inbox className="h-3.5 w-3.5" />} label="All"     count={counts.all} />
+            <FilterTab active={filter === "unread"}  onClick={() => setFilter("unread")}  icon={<Mail className="h-3.5 w-3.5" />}  label="Unread"  count={counts.unread} />
+            <FilterTab active={filter === "starred"} onClick={() => setFilter("starred")} icon={<Star className="h-3.5 w-3.5" />}  label="Starred" count={counts.starred} />
+          </div>
+
           <button
-            onClick={() => setHelp(true)}
-            className="brutal-border brutal-press hidden items-center gap-2 rounded-xl bg-paper px-3 py-2 text-xs font-bold text-ink md:inline-flex"
-            aria-label="Shortcuts"
+            onClick={refreshNow}
+            className="press inline-flex items-center gap-1.5 rounded-md border border-line bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
           >
-            <Search className="h-3.5 w-3.5" strokeWidth={2.75} /> Press{" "}
-            <kbd className="rounded bg-card px-1.5 py-0.5 font-mono">?</kbd>
+            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+          </button>
+          <button
+            onClick={toggleAutoRefresh}
+            aria-pressed={autoRefresh}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              autoRefresh ? "bg-ship text-paper" : "border border-line bg-card text-foreground hover:bg-muted"
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${autoRefresh ? "bg-paper" : "bg-mauve"}`} />
+            Auto-refresh {autoRefresh ? "on" : "off"}
           </button>
         </div>
       </div>
 
-      <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,380px)_1fr]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,360px)_1fr]">
         <InboxList
           emails={visible}
           selectedId={selectedId}
@@ -76,23 +79,34 @@ export function InboxSection() {
         <EmailViewer email={loading ? null : selected} />
       </div>
 
-      <ShortcutsModal open={help} onClose={() => setHelp(false)} />
-      <QrModal open={qr} onClose={() => setQr(false)} email={email} />
+      <p className="mt-4 hidden text-[11px] text-muted-foreground sm:block">
+        Shortcuts: <kbd className="rounded border border-line bg-card px-1 font-mono text-[10px]">/</kbd> search ·
+        <kbd className="ml-1 rounded border border-line bg-card px-1 font-mono text-[10px]">j/k</kbd> move ·
+        <kbd className="ml-1 rounded border border-line bg-card px-1 font-mono text-[10px]">c</kbd> copy ·
+        <kbd className="ml-1 rounded border border-line bg-card px-1 font-mono text-[10px]">n</kbd> new address ·
+        <kbd className="ml-1 rounded border border-line bg-card px-1 font-mono text-[10px]">r</kbd> refresh ·
+        <kbd className="ml-1 rounded border border-line bg-card px-1 font-mono text-[10px]">s</kbd> star
+      </p>
     </section>
   );
 }
 
-function Toggle({
-  label, active, onClick, icon,
-}: { label: string; active: boolean; onClick: () => void; icon: React.ReactNode }) {
+function FilterTab({
+  active, onClick, icon, label, count,
+}: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; count: number }) {
   return (
     <button
       onClick={onClick}
       aria-pressed={active}
-      className={`brutal-border brutal-press inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-ink ${active ? "bg-brand-green" : "bg-paper"}`}
+      className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+        active ? "bg-mist text-ship" : "text-muted-foreground hover:text-foreground"
+      }`}
     >
       {icon}
-      <span>{label}</span>
+      {label}
+      <span className={`ml-0.5 rounded px-1 text-[10px] ${active ? "bg-card text-ship" : "text-muted-foreground"}`}>
+        {count}
+      </span>
     </button>
   );
 }
