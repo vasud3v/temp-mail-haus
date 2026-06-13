@@ -3,25 +3,24 @@ import { Toaster } from "@/components/ui/sonner";
 import { Header } from "@/components/tempmail/Header";
 import { Hero } from "@/components/tempmail/Hero";
 import { InboxSection } from "@/components/tempmail/InboxSection";
-import { FeaturesGrid } from "@/components/tempmail/FeaturesGrid";
-import { StatsCards } from "@/components/tempmail/StatsCards";
+import { HowItWorks, Privacy, FAQ } from "@/components/tempmail/InfoSections";
 import { Footer } from "@/components/tempmail/Footer";
 import { TempMailProvider } from "@/components/tempmail/TempMailContext";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Tempbox — Temporary Email That Just Works" },
+      { title: "Tempbox — Disposable email, handled with care" },
       {
         name: "description",
         content:
-          "Free disposable email inbox. No signup. Instant addresses, auto-delete in 24h, total privacy.",
+          "Generate a private temporary email in one click. Receive verification codes and signup mail without exposing your real address. Auto-deletes in 24h.",
       },
-      { property: "og:title", content: "Tempbox — Temporary Email That Just Works" },
+      { property: "og:title", content: "Tempbox — Disposable email, handled with care" },
       {
         property: "og:description",
         content:
-          "Free disposable email inbox. No signup. Instant addresses, auto-delete in 24h, total privacy.",
+          "Private, disposable inboxes with zero retention. No signup, no tracking.",
       },
     ],
   }),
@@ -31,13 +30,14 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <TempMailProvider>
-      <div className="min-h-screen bg-paper text-ink transition-colors">
+      <div className="min-h-screen bg-background text-foreground antialiased">
         <Header />
         <main>
           <Hero />
           <InboxSection />
-          <FeaturesGrid />
-          <StatsCards />
+          <HowItWorks />
+          <Privacy />
+          <FAQ />
         </main>
         <Footer />
         <Toaster />
