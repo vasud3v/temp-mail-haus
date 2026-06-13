@@ -1,42 +1,37 @@
 import { useEffect } from "react";
 import { useTempMail } from "./TempMailContext";
 
-export function useKeyboardShortcuts(onToggleHelp: () => void, onShowQr: () => void) {
-  const { regenerate, copyEmail, emails, selectedId, setSelectedId, deleteEmail, searchRef, spamFilter } =
+export function useKeyboardShortcuts() {
+  const { regenerate, copyEmail, emails, selectedId, setSelectedId, deleteEmail, searchRef, refreshNow, toggleStar } =
     useTempMail();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tgt = e.target as HTMLElement | null;
       const inField = tgt && (tgt.tagName === "INPUT" || tgt.tagName === "TEXTAREA" || tgt.isContentEditable);
-      const visible = spamFilter ? emails.filter((x) => !x.spam) : emails;
 
       if (e.key === "/" && !inField) {
         e.preventDefault();
         searchRef.current?.focus();
         return;
       }
-      if (e.key === "?" && !inField) {
-        e.preventDefault();
-        onToggleHelp();
-        return;
-      }
       if (inField) return;
       const key = e.key.toLowerCase();
-      if (key === "r") { e.preventDefault(); regenerate(); }
+      if (key === "n") { e.preventDefault(); regenerate(); }
       else if (key === "c") { e.preventDefault(); copyEmail(); }
-      else if (key === "q") { e.preventDefault(); onShowQr(); }
+      else if (key === "r") { e.preventDefault(); refreshNow(); }
+      else if (key === "s" && selectedId) { e.preventDefault(); toggleStar(selectedId); }
       else if (key === "j" || key === "k") {
-        if (visible.length === 0) return;
+        if (emails.length === 0) return;
         e.preventDefault();
-        const idx = Math.max(0, visible.findIndex((x) => x.id === selectedId));
-        const next = key === "j" ? Math.min(visible.length - 1, idx + 1) : Math.max(0, idx - 1);
-        setSelectedId(visible[next].id);
-      } else if (key === "d" || e.key === "Backspace" || e.key === "Delete") {
+        const idx = Math.max(0, emails.findIndex((x) => x.id === selectedId));
+        const next = key === "j" ? Math.min(emails.length - 1, idx + 1) : Math.max(0, idx - 1);
+        setSelectedId(emails[next].id);
+      } else if (e.key === "Backspace" || e.key === "Delete") {
         if (selectedId) { e.preventDefault(); deleteEmail(selectedId); }
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [regenerate, copyEmail, emails, selectedId, setSelectedId, deleteEmail, searchRef, onToggleHelp, onShowQr, spamFilter]);
+  }, [regenerate, copyEmail, emails, selectedId, setSelectedId, deleteEmail, searchRef, refreshNow, toggleStar]);
 }

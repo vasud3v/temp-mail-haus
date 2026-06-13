@@ -1,37 +1,28 @@
 import { EmailGenerator } from "./EmailGenerator";
-import { useTempMail } from "./TempMailContext";
-import { t } from "@/lib/i18n";
+import { ShieldCheck, Zap, EyeOff } from "lucide-react";
 
 export function Hero() {
-  const { locale } = useTempMail();
   return (
-    <section id="top" className="relative overflow-hidden">
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-0">
-        <div className="absolute left-[-40px] top-24 hidden h-24 w-24 rotate-12 rounded-2xl border-[3px] border-ink bg-brand-pink md:block" />
-        <div className="absolute right-10 top-10 hidden h-16 w-16 -rotate-12 rounded-full border-[3px] border-ink bg-brand-green md:block" />
-        <div className="absolute right-[12%] bottom-10 hidden h-20 w-20 rotate-6 rounded-2xl border-[3px] border-ink bg-brand-blue md:block" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-7xl px-4 pt-16 pb-12 sm:px-6 sm:pt-24 lg:px-8">
-        <div className="mx-auto max-w-4xl text-center">
-          <span className="brutal-border inline-flex items-center gap-2 rounded-full bg-brand-yellow px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-ink brutal-shadow-sm">
-            <span className="h-2 w-2 rounded-full bg-ink" />
-            {t(locale, "hero.badge")}
-          </span>
-
-          <h1 className="mt-6 text-5xl font-black leading-[0.95] tracking-tight text-ink sm:text-6xl md:text-7xl lg:text-8xl">
-            {t(locale, "hero.title.1")}
-            <br />
-            <span className="relative inline-block">
-              {t(locale, "hero.title.2")}
-              <span className="absolute inset-x-0 bottom-1 -z-10 h-3 bg-brand-yellow sm:h-4" aria-hidden />
-            </span>
-            <span className="text-brand-pink">.</span>
-          </h1>
-
-          <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            {t(locale, "hero.subtitle")}
+    <section id="top" className="relative">
+      <div className="mx-auto max-w-6xl px-5 pb-16 pt-16 sm:px-8 sm:pt-24">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            01 / Temporary email
           </p>
+          <h1 className="mt-5 font-serif text-5xl leading-[1.02] tracking-tight text-foreground sm:text-6xl md:text-7xl">
+            Disposable inboxes,<br />
+            <span className="italic text-passion">handled with care.</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
+            Generate an address in a single click. Receive verification codes, signup links and
+            receipts — without ever exposing your real email.
+          </p>
+
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px] text-muted-foreground">
+            <Tag icon={<Zap className="h-3 w-3" />}>Instant</Tag>
+            <Tag icon={<ShieldCheck className="h-3 w-3" />}>No signup</Tag>
+            <Tag icon={<EyeOff className="h-3 w-3" />}>Auto-deletes in 24h</Tag>
+          </div>
         </div>
 
         <div id="generator" className="mt-12 sm:mt-16">
@@ -39,5 +30,14 @@ export function Hero() {
         </div>
       </div>
     </section>
+  );
+}
+
+function Tag({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="text-passion">{icon}</span>
+      {children}
+    </span>
   );
 }

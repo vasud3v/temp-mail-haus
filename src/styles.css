@@ -5,12 +5,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 6px);
-  --radius-md: calc(var(--radius) - 4px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -31,136 +30,132 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-ring-offset-background: var(--background);
 
-  --color-brand-yellow: var(--brand-yellow);
-  --color-brand-blue: var(--brand-blue);
-  --color-brand-green: var(--brand-green);
-  --color-brand-pink: var(--brand-pink);
-  --color-ink: var(--ink);
+  --color-mist: var(--mist);
+  --color-mauve: var(--mauve);
+  --color-ship: var(--ship);
+  --color-passion: var(--passion);
+  --color-rose: var(--rose);
   --color-paper: var(--paper);
+  --color-line: var(--line);
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-
-  --shadow-brutal: 6px 6px 0 0 var(--ink);
-  --shadow-brutal-sm: 4px 4px 0 0 var(--ink);
-  --shadow-brutal-lg: 10px 10px 0 0 var(--ink);
 }
 
 :root {
-  --radius: 1.25rem;
+  --radius: 0.75rem;
 
-  --ink: #111111;
-  --paper: #f8f6f1;
+  /* Brand palette */
+  --mist:    #dbdce8;  /* Royal Pastel Blue */
+  --mauve:   #aaa3b4;  /* Blueberry Mauve */
+  --ship:    #463848;  /* Ship Gray */
+  --passion: #6e3f52;  /* Passionfruit */
+  --rose:    #976775;  /* Dark Rose Gold */
 
-  --brand-yellow: #ffd84d;
-  --brand-blue: #6ca6ff;
-  --brand-green: #89e089;
-  --brand-pink: #ff9bcb;
+  --paper: #f6f5f0;
+  --line:  #d8d4dc;
 
-  --background: #f8f6f1;
-  --foreground: #111111;
+  --background: var(--paper);
+  --foreground: var(--ship);
   --card: #ffffff;
-  --card-foreground: #111111;
+  --card-foreground: var(--ship);
   --popover: #ffffff;
-  --popover-foreground: #111111;
-  --primary: #111111;
+  --popover-foreground: var(--ship);
+  --primary: var(--ship);
   --primary-foreground: #ffffff;
-  --secondary: #ffd84d;
-  --secondary-foreground: #111111;
-  --muted: #efece4;
-  --muted-foreground: #5a564e;
-  --accent: #6ca6ff;
-  --accent-foreground: #111111;
-  --destructive: #ff5a5f;
+  --secondary: var(--mist);
+  --secondary-foreground: var(--ship);
+  --muted: #efedee;
+  --muted-foreground: #6b6470;
+  --accent: var(--passion);
+  --accent-foreground: #ffffff;
+  --destructive: #b04141;
   --destructive-foreground: #ffffff;
-  --border: #111111;
-  --input: #111111;
-  --ring: #111111;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--passion);
 
   --sidebar: #ffffff;
-  --sidebar-foreground: #111111;
-  --sidebar-primary: #111111;
+  --sidebar-foreground: var(--ship);
+  --sidebar-primary: var(--ship);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ffd84d;
-  --sidebar-accent-foreground: #111111;
-  --sidebar-border: #111111;
-  --sidebar-ring: #111111;
+  --sidebar-accent: var(--mist);
+  --sidebar-accent-foreground: var(--ship);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--passion);
 }
 
 .dark {
-  --ink: #f5f1e6;
-  --paper: #14130f;
+  --ship:    #ece6ef;
+  --paper:   #1a161c;
+  --line:    #2f2a32;
 
-  --background: #14130f;
-  --foreground: #f5f1e6;
-  --card: #1d1c17;
-  --card-foreground: #f5f1e6;
-  --popover: #1d1c17;
-  --popover-foreground: #f5f1e6;
-  --primary: #f5f1e6;
-  --primary-foreground: #14130f;
-  --secondary: #ffd84d;
-  --secondary-foreground: #14130f;
-  --muted: #2a2922;
-  --muted-foreground: #b3ad9e;
-  --accent: #6ca6ff;
-  --accent-foreground: #14130f;
-  --destructive: #ff5a5f;
-  --destructive-foreground: #14130f;
-  --border: #f5f1e6;
-  --input: #f5f1e6;
-  --ring: #f5f1e6;
+  --background: #1a161c;
+  --foreground: #ece6ef;
+  --card: #221d24;
+  --card-foreground: #ece6ef;
+  --popover: #221d24;
+  --popover-foreground: #ece6ef;
+  --primary: #ece6ef;
+  --primary-foreground: #1a161c;
+  --secondary: #2a2530;
+  --secondary-foreground: #ece6ef;
+  --muted: #251f28;
+  --muted-foreground: #a8a0ad;
+  --accent: #976775;
+  --accent-foreground: #ffffff;
+  --destructive: #c25d5d;
+  --destructive-foreground: #ffffff;
+  --border: #2f2a32;
+  --input: #2f2a32;
+  --ring: #976775;
 }
 
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
+  *, *::before, *::after { border-color: var(--color-border); }
 
-  html,
-  body {
+  html, body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "cv11";
   }
 
-  h1, h2, h3, h4 {
-    letter-spacing: -0.025em;
+  ::selection {
+    background: color-mix(in oklab, var(--passion) 25%, transparent);
+    color: var(--ship);
   }
+
+  .font-serif { font-family: var(--font-serif); }
+  .font-mono  { font-family: var(--font-mono); }
 }
 
-@utility brutal-border {
-  border-width: 3px;
-  border-color: var(--ink);
+@utility hairline {
+  border-width: 1px;
+  border-color: var(--line);
 }
 
-@utility brutal-shadow {
-  box-shadow: 6px 6px 0 0 var(--ink);
-}
-
-@utility brutal-shadow-sm {
-  box-shadow: 4px 4px 0 0 var(--ink);
-}
-
-@utility brutal-shadow-lg {
-  box-shadow: 10px 10px 0 0 var(--ink);
-}
-
-@utility brutal-press {
-  transition: transform 180ms ease, box-shadow 180ms ease;
-  &:active {
-    transform: translate(3px, 3px);
-    box-shadow: 0 0 0 0 var(--ink);
-  }
-}
-
-@utility brutal-lift {
-  transition: transform 200ms ease, box-shadow 200ms ease;
+@utility lift {
+  transition: transform 200ms cubic-bezier(.2,.7,.2,1),
+              box-shadow 200ms cubic-bezier(.2,.7,.2,1),
+              border-color 200ms ease;
   &:hover {
-    transform: translate(-3px, -3px);
-    box-shadow: 10px 10px 0 0 var(--ink);
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px -18px color-mix(in oklab, var(--ship) 60%, transparent);
+    border-color: color-mix(in oklab, var(--ship) 30%, var(--line));
   }
+}
+
+@utility press {
+  transition: transform 120ms ease, background-color 120ms ease;
+  &:active { transform: translateY(1px); }
+}
+
+@utility surface {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
 }
